@@ -1,0 +1,37 @@
+name: ml4nanopores-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - scikit-learn
+  - scikit-optimize
+  - matplotlib
+  - seaborn
+  - pytorch=2.3.1
+  - pandas
+  - tsfresh
+  - tsfel
+  - tensorflow
+  - tensorboard
+  - mamba
+  - autogluon
+  - glmnet
+  - fastdtw
+  - ipykernel
+  - openpyxl
+  - umap-learn
+  - hdbscan
+  - pip
+  - pip:
+    - torchmetrics
+    - tqdm
+    - pyABF
+    - hurst
+    - sampen
+    - diptest
+    - dtaidistance
+    - nolds
+    - optuna

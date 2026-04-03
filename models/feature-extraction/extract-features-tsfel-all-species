@@ -1,0 +1,90 @@
+import pickle
+import tsfel
+import pandas as pd
+import numpy as np
+import warnings
+
+'''This script extracts TSFEL features for all species in the blockade dataset and saves them to a CSV file.'''
+with open('/home/rushang_phira/src/data/complete_feature_sets/all_blockades.pkl', 'rb') as f:
+    currents_dict = pickle.load(f)
+
+cfg = tsfel.get_features_by_domain()
+
+all_feature_data = []
+
+for key, currents in currents_dict.items():
+    feature_list = []
+    print("currently extracting for ", key)
+    # Process each currents list
+    for ts in currents:
+        if len(ts) > 20:
+        # Extract TSFEL features for the time series
+            warnings.simplefilter("ignore", UserWarning) # I wanted to suppress outputs at the time. Left it in here just in case
+            features = tsfel.time_series_features_extractor(cfg, ts, verbose=0)
+            feature_list.append(features)
+    
+    feature_df = pd.concat(feature_list, ignore_index=True)
+
+    # Add the label column
+    feature_df['label'] = key
+
+    all_feature_data.append(feature_df)
+
+final_feature_df = pd.concat(all_feature_data, ignore_index=True)
+
+final_feature_df.to_csv("/home/rushang_phira/src/data/complete_feature_sets/tsfel.csv", index=False)
+
+'''segment below was for testing purposes in preliminary analysis. We do not end up using it in the final pipeline. Leaving it here for reference.'''
+
+k8_k12_k16 = pd.read_csv('/home/rushang_phira/2021-03-19_3.5_L_H4Ac_K8_K12_K16-2.abf_currentlevels.15_classified.csv')
+raw_data = pyabf.ABF('/mnt/vnas/ml4nanopore_data/processed/2021-03-19 AeL R220S Acetylated Peptides ABF/2021-03-19 3.5 µL H4Ac K8 K12 K16-2.abf')
+k8_k12_k16 = k8_k12_k16.dropna(subset=['final_label'])
+from tqdm import tqdm
+
+cfg = tsfel.get_features_by_domain()
+raw_signal = raw_data.data[0]
+k8_k12_k16 = k8_k12_k16.copy()
+k8_k12_k16['id'] = k8_k12_k16.index  # unique identifier
+
+features_list = []
+
+valid_segments = k8_k12_k16[k8_k12_k16["length"] > 20].copy()
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=UserWarning)
+    
+    for _, row in tqdm(valid_segments.iterrows(), total=len(valid_segments), desc="Extracting features"):
+        # Extract exact signal segment
+        segment = raw_signal[int(row["idxstart"]):int(row["idxend"])]
+        
+        # Extract features and add metadata
+        feats = tsfel.time_series_features_extractor(cfg, segment, verbose=0)
+        feats['id'] = row['id']  # Preserve original ID
+        feats['_start'] = row['idxstart']  # For validation
+        feats['_end'] = row['idxend']     # For validation
+        
+        features_list.append(feats)
+
+# Combine all features
+tsfel_features = pd.concat(features_list, ignore_index=True)
+
+# 4. Merge with original data with validation
+final_data = pd.merge(
+    k8_k12_k16,
+    tsfel_features,
+    on='id',
+    how='left'  # Keeps all original rows
+)
+
+# Check segment boundaries match
+boundary_check = (
+    (final_data['idxstart'] == final_data['_start']) & 
+    (final_data['idxend'] == final_data['_end'])
+)
+print(f"\nBoundary matches: {boundary_check.sum()}/{len(final_data)}")
+
+# Check for missing features
+missing_feats = final_data[tsfel_features.columns].isna().any(axis=1).sum()
+print(f"Rows with missing features: {missing_feats}")
+
+final_data.drop(columns=['id', '_start', '_end'], inplace=True)
