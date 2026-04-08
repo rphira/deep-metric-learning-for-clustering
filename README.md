@@ -4,14 +4,14 @@ This project investigates **unsupervised clustering of biological nanopore curre
 
 ## Overview
 
-Nanopore sensing produces complex current signals where traditional features (e.g., mean, dwell time) are insufficient. This work explores **richer feature representations and advanced clustering methods** to improve analyte differentiation. 
+Nanopore sensing produces complex current signals where traditional features (e.g., mean, dwell time) are decisive. This work explores **richer feature representations** apart from mean-related features to prevent influence of central tendency measures to improve analyte differentiation. 
 
 ## Approach
 
 * **Feature Extraction**
 
-  * TSFEL, catch22, and domain-specific nanopore features
-  * Removal of mean-dependent features to focus on dynamics
+  * Domain-specific TSFEL, catch22, tsfresh nanopore features
+  * Removal of mean-dependent features
 
 * **Clustering Methods**
 
@@ -33,9 +33,7 @@ Nanopore sensing produces complex current signals where traditional features (e.
 
 ## Key Insights
 
-* Mean-based features alone are insufficient for nanopore data
-* Feature selection is critical in high-dimensional settings
-* Deep clustering significantly improves fine-grained discrimination
+* Deep clustering significantly improves fine-grained discrimination between PTMs in the absence of mean-related features
 * Attention + memory mechanisms help in sequential/continual learning
 
 ## Future Work
